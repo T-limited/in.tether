@@ -1,610 +1,248 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>CryptoGate</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/lucide@latest"></script>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;600;700;800&display=swap" rel="stylesheet">
-  <style>
-    :root{
-      --brand-blue: #0ea5e9;
-      --brand-dark: #0f172a;
-      --brand-light: #f8fbff;
-    }
-    html,body{height:100%}
-    body{
-      font-family: 'Plus Jakarta Sans', system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
-      background: var(--brand-light);
-      color: var(--brand-dark);
-      -webkit-font-smoothing:antialiased;
-      -moz-osx-font-smoothing:grayscale;
-    }
-    .step { display:none; opacity:0; transform:translateY(8px); transition: all 240ms ease; }
-    .step.active { display:block; opacity:1; transform:none; }
-    .glass-panel {
-      background: rgba(255,255,255,0.92);
-      backdrop-filter: blur(6px);
-      border: 1px solid rgba(14,165,233,0.08);
-      box-shadow: 0 10px 20px rgba(2,6,23,0.04);
-    }
-    .btn-primary {
-      background-color: var(--brand-blue);
-      color: white;
-    }
-    .loader-ring {
-      border: 4px solid #e6eef6;
-      border-top-color: var(--brand-blue);
-      border-radius: 9999px;
-      width:48px;height:48px;
-      animation: spin 1s linear infinite;
-    }
-    @keyframes spin { to { transform:rotate(360deg); } }
-    #toast-container { position: fixed; right: 1rem; bottom: 1rem; z-index: 60; display:flex; flex-direction:column; gap:0.5rem; }
-    .modal-backdrop { background: rgba(2,6,23,0.5); position:fixed; inset:0; display:flex; align-items:center; justify-content:center; z-index:70; }
-    .modal-card { width:100%; max-width:760px; margin:1rem; }
-  </style>
-</head>
-<body class="min-h-screen flex flex-col">
-
-  <nav class="border-b border-sky-100 bg-white/60 backdrop-blur sticky top-0 z-40">
-    <div class="max-w-7xl mx-auto px-4 h-16 flex items-center justify-between">
-      <div class="flex items-center gap-3">
-        <div class="w-9 h-9 bg-sky-500 rounded-lg flex items-center justify-center text-white">
-          <i data-lucide="wallet" class="w-5 h-5"></i>
-        </div>
-        <span class="font-extrabold text-xl tracking-tight">CRYPTO<span class="text-sky-500">GATE</span></span>
-      </div>
-      <div id="user-display" class="hidden items-center gap-3">
-        <div class="text-right hidden sm:block">
-          <p class="text-xs font-bold text-slate-900 leading-none">Finnur Sturluson</p>
-          <p class="text-[10px] text-sky-600 font-medium">Verified Account</p>
-        </div>
-        <div class="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center">
-          <i data-lucide="user" class="w-4 h-4 text-slate-600"></i>
-        </div>
-      </div>
-    </div>
-  </nav>
-
-  <main class="flex-grow">
-    <div class="max-w-5xl mx-auto px-4 py-12">
-      <!-- Step 1: Owner confirm -->
-      <section id="step-1" class="step active max-w-lg mx-auto" aria-labelledby="s1-title" tabindex="-1">
-        <div class="text-center mb-8">
-          <h1 id="s1-title" class="text-3xl font-extrabold">Confirm Ownership</h1>
-          <p class="text-slate-500 mt-2">Please confirm your details to proceed with the withdrawal.</p>
-        </div>
-
-        <div class="glass-panel p-6 rounded-2xl border-t-4 border-t-sky-500">
-          <div class="space-y-5">
-            <div class="p-4 bg-sky-50 rounded-lg border border-sky-100">
-              <label class="text-[10px] font-bold text-sky-600 uppercase tracking-widest block mb-1">User Beneficiary</label>
-              <p class="text-lg font-bold text-slate-900 mb-3">Finnur Sturluson</p>
-
-              <label class="text-[10px] font-bold text-sky-600 uppercase tracking-widest block mb-1">Country</label>
-              <p class="font-mono text-sm text-slate-700 bg-white/60 p-2 rounded border border-sky-100">Ice-land</p>
-            </div>
-
-            <div class="flex items-start gap-3 p-3 bg-slate-50 rounded-lg border border-slate-200">
-              <i data-lucide="info" class="w-5 h-5 text-sky-500 shrink-0"></i>
-              <p class="text-xs text-slate-600">By continuing, you certify you are the legal owner of the assets and agree to secure disbursement terms.</p>
-            </div>
-
-            <div class="flex items-center gap-3">
-              <input id="agree" type="checkbox" class="w-5 h-5 rounded border-slate-300 text-sky-500 focus:ring-sky-500" />
-              <label for="agree" class="text-sm font-semibold text-slate-700 cursor-pointer select-none">I agree with the terms and conditions</label>
-            </div>
-
-            <button id="btn-continue" class="btn-primary w-full py-3 rounded-xl font-bold disabled:opacity-60 disabled:cursor-not-allowed" disabled aria-disabled="true">
-              Access Dashboard <i data-lucide="chevron-right" class="w-4 h-4"></i>
-            </button>
-          </div>
-        </div>
-      </section>
-
-      <!-- Step 2: Dashboard -->
-      <section id="step-2" class="step max-w-5xl mx-auto" aria-labelledby="s2-title" tabindex="-1">
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div class="lg:col-span-2 space-y-6">
-            <div class="bg-slate-900 rounded-3xl p-8 text-white relative overflow-hidden shadow-2xl">
-              <div class="absolute -top-28 -right-28 w-64 h-64 bg-sky-500/20 rounded-full blur-3xl"></div>
-              <p class="text-sky-400 text-xs font-bold uppercase tracking-widest mb-2">Available Balance</p>
-              <h2 class="text-5xl font-extrabold tracking-tight">$205,000.00</h2>
-
-              <div class="flex gap-4 mt-6">
-                <button type="button" id="withdraw-btn" class="bg-white text-slate-900 px-6 py-2 rounded-xl font-bold flex items-center gap-2">Withdraw <i data-lucide="arrow-up-right" class="w-4 h-4"></i></button>
-                <button type="button" class="bg-slate-800 text-slate-300 px-6 py-2 rounded-xl font-bold border border-slate-700">Deposit <i data-lucide="plus" class="w-4 h-4"></i></button>
-              </div>
-            </div>
-
-            <div class="glass-panel rounded-3xl p-6">
-              <h3 class="font-bold text-slate-900 text-lg mb-4 flex items-center gap-2"><i data-lucide="layers" class="w-5 h-5 text-sky-500"></i> Portfolio Holdings</h3>
-              <div class="space-y-3">
-                <div class="flex items-center justify-between p-3 bg-white rounded-2xl border border-slate-100">
-                  <div class="flex items-center gap-3">
-                    <div class="w-12 h-12 bg-orange-50 rounded-xl flex items-center justify-center text-orange-500"><i data-lucide="bitcoin"></i></div>
-                    <div><p class="font-bold text-slate-900">Bitcoin</p><p class="text-xs text-slate-400">BTC Portfolio</p></div>
-                  </div>
-                  <div class="text-right"><p class="font-bold text-slate-900">$205,000.00</p><p class="text-xs text-emerald-500 font-bold">+4.2%</p></div>
-                </div>
-
-                <div class="flex items-center justify-between p-3 bg-white rounded-2xl border border-slate-100">
-                  <div class="flex items-center gap-3">
-                    <div class="w-12 h-12 bg-blue-50 rounded-xl flex items-center justify-center text-blue-500"><i data-lucide="zap"></i></div>
-                    <div><p class="font-bold text-slate-900">Ethereum</p><p class="text-xs text-slate-400">ETH Portfolio</p></div>
-                  </div>
-                  <div class="text-right"><p class="font-bold text-slate-900">$0.00</p><p class="text-xs text-emerald-500 font-bold">+2.8%</p></div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <aside class="space-y-6">
-            <div class="glass-panel rounded-3xl p-6">
-              <h4 class="font-bold text-slate-900 text-sm uppercase tracking-widest mb-4">Market Activity</h4>
-              <div class="space-y-4">
-                <div class="flex gap-3">
-                  <div class="w-1 h-10 bg-sky-500 rounded-full"></div>
-                  <div><p class="text-xs text-slate-400">Incoming Transaction</p><p class="text-sm font-bold text-slate-900">Pending Network Confirmation</p></div>
-                </div>
-                <div class="flex gap-3">
-                  <div class="w-1 h-10 bg-slate-200 rounded-full"></div>
-                  <div><p class="text-xs text-slate-400">System Audit</p><p class="text-sm font-bold text-slate-900">Completed Successfully</p></div>
-                </div>
-              </div>
-            </div>
-          </aside>
-        </div>
-      </section>
-
-      <!-- Step 3: Withdraw — BTC only -->
-      <section id="step-3" class="step max-w-2xl mx-auto" aria-labelledby="s3-title" tabindex="-1">
-        <button class="mb-6 text-slate-500 hover:text-sky-600 font-bold flex items-center gap-2" data-back-to="2"><i data-lucide="arrow-left" class="w-4 h-4"></i> Back to Dashboard</button>
-        <h1 id="s3-title" class="text-2xl font-extrabold mb-2">Withdraw — BTC</h1>
-        <p class="text-slate-500 mb-6">Withdraw in Bitcoin to a verified BTC address.</p>
-
-        <div class="glass-panel p-6 rounded-3xl">
-          <form id="btc-form" class="space-y-4">
-            <div>
-              <label class="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-1">BTC Address</label>
-              <input id="btc-destination" type="text" placeholder="Enter destination BTC address" required class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl" />
-            </div>
-
-            <div class="flex gap-3">
-              <button id="btc-confirm" class="btn-primary flex-1 py-3 rounded-xl font-bold" type="button">Confirm & Continue</button>
-              <button type="button" class="py-3 px-4 rounded-xl border" data-back-to="2">Cancel</button>
-            </div>
-          </form>
-        </div>
-      </section>
-
-      <!-- Step 4: Secure link (progress) -->
-      <section id="step-4" class="step max-w-lg mx-auto text-center" aria-labelledby="s4-title" tabindex="-1">
-        <div class="flex flex-col items-center justify-center min-h-[320px]">
-          <div class="loader-ring mb-6" aria-hidden="true"></div>
-          <h2 id="s4-title" class="text-2xl font-extrabold mb-2">Initializing Secure Transfer</h2>
-          <p class="text-slate-500 mb-6">Connecting to encrypted global banking / settlement node. This usually takes ~18 seconds.</p>
-
-          <div class="w-full bg-slate-100 rounded-full h-2 mb-3 max-w-md overflow-hidden">
-            <div id="progress-bar" class="bg-sky-500 h-full w-0" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
-          </div>
-          <p id="progress-text" class="text-xs font-mono text-sky-600 tracking-widest">SECURE LINK: 0%</p>
-        </div>
-      </section>
-
-      <!-- Step 5: Transaction Preview (fee removed) -->
-      <section id="step-5" class="step max-w-lg mx-auto" aria-labelledby="s5-title" tabindex="-1">
-        <div class="glass-panel overflow-hidden rounded-3xl">
-          <div class="bg-sky-500 p-6 text-white">
-            <p class="text-xs font-bold uppercase tracking-widest mb-1">Transaction Amount</p>
-            <h2 id="s5-title" class="text-3xl font-extrabold">$205,000.00</h2>
-          </div>
-
-          <div class="p-5 space-y-4">
-            <div class="space-y-2">
-              <div class="flex justify-between items-center py-2 border-b border-slate-50">
-                <span class="text-sm text-slate-400">Destination</span>
-                <span id="dest-val" class="text-sm font-bold text-slate-900">BTC Wallet</span>
-              </div>
-
-              <div class="flex justify-between items-center py-2 border-b border-slate-50">
-                <span class="text-sm text-slate-400">Reference</span>
-                <span id="ref-val" class="text-sm font-mono font-bold text-slate-900">WD-7821-X99</span>
-              </div>
-
-              <div class="flex justify-between items-center py-2 border-b border-slate-50">
-                <span class="text-sm text-slate-400">Date & Time</span>
-                <span id="tx-datetime" class="text-sm font-bold text-slate-900">--</span>
-              </div>
-
-              <div class="flex justify-between items-center py-2">
-                <span class="text-sm text-slate-400">Status</span>
-                <span id="tx-status" class="text-sm font-bold text-amber-600">Processing($70 left)</span>
-              </div>
-            </div>
-
-            <div id="auto-notice" class="hidden p-3 bg-orange-50 rounded-xl border border-orange-100 flex gap-3">
-              <i data-lucide="alert-circle" class="w-5 h-5 text-orange-500"></i>
-              <p id="auto-notice-text" class="text-[12px] text-orange-800 font-medium leading-relaxed">
-                Notice: An additional regulatory clearance fee will be required. More information will be displayed.
-              </p>
-            </div>
-
-            <button id="pay-now" class="btn-primary w-full py-3 rounded-xl font-bold">Pay Now <i data-lucide="check" class="w-4 h-4"></i></button>
-          </div>
-        </div>
-      </section>
-
-      <!-- Step 6: Fee Payment (upload proof) -->
-      <section id="step-6" class="step max-w-lg mx-auto" aria-labelledby="s6-title" tabindex="-1">
-        <h1 id="s6-title" class="text-2xl font-extrabold mb-4 text-center">Final Step — Fee Payment ($70)</h1>
-
-        <div class="glass-panel p-5 rounded-3xl space-y-4">
-          <div>
-            <label class="text-[10px] font-bold text-sky-600 uppercase tracking-widest block mb-2">Bitcoin Payment Address</label>
-            <div class="flex items-center gap-2 p-3 bg-slate-900 rounded-xl text-white">
-              <code id="btc-addr" class="flex-1 text-xs font-mono truncate">bc1q7a3z4fma46nvz08r7xcp5u83ksuwz9a0mfce0h</code>
-              <button id="copy-addr" type="button" class="p-2 hover:bg-slate-800 rounded-lg text-sky-400" aria-label="Copy Bitcoin address">
-                <i data-lucide="copy" class="w-4 h-4"></i>
-              </button>
-            </div>
-          </div>
-
-          <div>
-            <label class="text-[10px] font-bold text-slate-400 uppercase tracking-widest block mb-2">Upload payment confirmation (image or PDF)</label>
-            <div class="relative group">
-              <input id="file-up" type="file" accept="image/*,application/pdf" class="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10" aria-label="Upload payment confirmation" />
-              <div id="upload-ui" class="border-2 border-dashed border-slate-200 rounded-2xl p-6 text-center bg-slate-50 transition-all">
-                <div id="up-placeholder" class="">
-                  <i data-lucide="camera" class="w-10 h-10 text-slate-300 mx-auto mb-2"></i>
-                  <p class="text-sm font-bold text-slate-900">Select file</p>
-                  <p class="text-[10px] text-slate-400 uppercase font-bold tracking-widest mt-1">Upload receipt or tx proof</p>
-                </div>
-                <div id="up-preview" class="hidden text-left space-y-2"></div>
-              </div>
-            </div>
-          </div>
-
-          <button id="btn-submit" class="btn-primary w-full py-3 rounded-xl font-bold disabled:opacity-60" disabled aria-disabled="true">Submit Disbursement <i data-lucide="send" class="w-4 h-4"></i></button>
-        </div>
-      </section>
-
-      <!-- Step 7: Verification -->
-      <section id="step-7" class="step max-w-md mx-auto text-center" aria-labelledby="s7-title" tabindex="-1">
-        <div class="flex flex-col items-center justify-center">
-          <div class="w-24 h-24 border-8 border-slate-100 border-t-sky-500 rounded-full animate-spin mb-8 shadow-xl" aria-hidden="true"></div>
-          <h2 id="s7-title" class="text-2xl font-extrabold mb-3">Verification in Progress</h2>
-          <p class="text-slate-500 leading-relaxed">Waiting for network confirmations. Disbursement will be released automatically upon confirmation.</p>
-          <div class="mt-8 flex items-center gap-2 px-4 py-2 bg-emerald-50 text-emerald-600 rounded-full text-xs font-bold border border-emerald-100">
-            <i data-lucide="activity" class="w-3 h-3"></i> SYSTEM STATUS: MONITORING LIVE
-          </div>
-        </div>
-      </section>
-
-    </div>
-  </main>
-
-  <footer class="py-6 text-center text-[10px] font-bold text-slate-400 uppercase tracking-[0.15em] border-t border-slate-100">
-    &copy; 2026 CryptoGate Global
-  </footer>
-
-  <!-- Toast container -->
-  <div id="toast-container" aria-live="polite" aria-atomic="true"></div>
-
-  <!-- Compliance modal (hidden until shown) -->
-  <div id="compliance-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="compliance-title">
-    <div class="modal-card glass-panel p-6 rounded-2xl">
-      <div class="flex justify-between items-start gap-4">
-        <div>
-          <h3 id="compliance-title" class="text-lg font-extrabold">COMPLIANCE POLICY NOTICE</h3>
-          <p class="text-sm text-slate-600 mt-2">
-            To comply with international cross-border financial regulations and the Anti-Money Laundering (AML) directives of global cryptocurrency gateways, this transaction requires a one-time Regulatory Clearance Fee of $120 This fee covers the high-security node allocation and multi-network protocol clearance for settlements exceeding regulatory thresholds.
-          </p>
-        </div>
-        <button id="compliance-close" class="text-slate-500 hover:text-slate-700" aria-label="Close">
-          <i data-lucide="x" class="w-5 h-5"></i>
-        </button>
-      </div>
-
-      <div class="mt-4 flex gap-3 justify-end">
-        <button id="compliance-later" class="py-2 px-4 rounded border">Later</button>
-        <button id="compliance-pay" class="btn-primary py-2 px-4 rounded">Pay Now ($120)</button>
-      </div>
-    </div>
-  </div>
-
-  <noscript class="fixed inset-0 bg-white/95 z-50 flex items-center justify-center p-4">
-    <div class="max-w-xl text-center">
-      <p class="font-bold text-lg">JavaScript is required for this prototype</p>
-      <p class="text-sm text-slate-600 mt-2">Enable JavaScript to interact with the secure flow demo.</p>
-    </div>
-  </noscript>
-
-  <script>
-    document.addEventListener('DOMContentLoaded', () => {
-      if (window.lucide) lucide.createIcons();
-
-      const state = {
-        current: 1,
-        uploadedFile: null,
-        complianceTimer: null,
-        btcDestination: ''
-      };
-
-      const steps = {
-        1: document.getElementById('step-1'),
-        2: document.getElementById('step-2'),
-        3: document.getElementById('step-3'),
-        4: document.getElementById('step-4'),
-        5: document.getElementById('step-5'),
-        6: document.getElementById('step-6'),
-        7: document.getElementById('step-7'),
-      };
-
-      const btnContinue = document.getElementById('btn-continue');
-      const agree = document.getElementById('agree');
-      const userDisplay = document.getElementById('user-display');
-      const withdrawBtn = document.getElementById('withdraw-btn');
-
-      const progressBar = document.getElementById('progress-bar');
-      const progressText = document.getElementById('progress-text');
-
-      // BTC form
-      const btcConfirm = document.getElementById('btc-confirm');
-      const btcDestInput = document.getElementById('btc-destination');
-
-      // Preview elements
-      const txDatetimeEl = document.getElementById('tx-datetime');
-      const txStatusEl = document.getElementById('tx-status');
-      const autoNoticeEl = document.getElementById('auto-notice');
-      const payNow = document.getElementById('pay-now');
-
-      // Compliance modal
-      const complianceModal = document.getElementById('compliance-modal');
-      const compliancePay = document.getElementById('compliance-pay');
-      const complianceLater = document.getElementById('compliance-later');
-      const complianceClose = document.getElementById('compliance-close');
-
-      // Fee payment/upload
-      const fileUp = document.getElementById('file-up');
-      const upPreview = document.getElementById('up-preview');
-      const upPlaceholder = document.getElementById('up-placeholder');
-      const btnSubmit = document.getElementById('btn-submit');
-      const btcAddrEl = document.getElementById('btc-addr');
-
-      const toastContainer = document.getElementById('toast-container');
-      function showToast(message, timeout = 3500) {
-        const el = document.createElement('div');
-        el.className = 'px-4 py-2 rounded shadow ring-1 ring-black/5 bg-white flex items-center gap-3';
-        el.setAttribute('role','status');
-        el.innerHTML = '<div class="text-xs font-medium">'+message+'</div>';
-        toastContainer.appendChild(el);
-        setTimeout(()=> {
-          el.style.opacity = '0';
-          el.style.transform = 'translateY(6px)';
-          setTimeout(()=> el.remove(), 300);
-        }, timeout);
-      }
-
-      function goToStep(n) {
-        if (state.complianceTimer && n !== 5) {
-          clearTimeout(state.complianceTimer);
-          state.complianceTimer = null;
-        }
-        Object.values(steps).forEach(s => s.classList.remove('active'));
-        const next = steps[n];
-        if (!next) return;
-        next.classList.add('active');
-        next.focus({preventScroll:true});
-        state.current = n;
-        if (n === 2) {
-          userDisplay.classList.remove('hidden'); userDisplay.classList.add('flex');
-        }
-        if (n === 5) {
-          const now = new Date();
-          txDatetimeEl.textContent = now.toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' });
-          txStatusEl.textContent = 'Processing';
-          if (state.complianceTimer) clearTimeout(state.complianceTimer);
-          // After 12 seconds show inline notice and modal with compliance message
-          state.complianceTimer = setTimeout(() => {
-            autoNoticeEl.classList.remove('hidden');
-            showComplianceModal();
-          }, 12000);
-        } else {
-          autoNoticeEl.classList.add('hidden');
-        }
-      }
-
-      // initial enable continue
-      agree.addEventListener('change', (e) => {
-        btnContinue.disabled = !e.target.checked;
-        btnContinue.setAttribute('aria-disabled', String(!e.target.checked));
-      });
-
-      btnContinue.addEventListener('click', () => {
-        if (!agree.checked) return;
-        goToStep(2);
-      });
-
-      withdrawBtn.addEventListener('click', () => {
-        // go to BTC-only withdraw
-        goToStep(3);
-      });
-
-      // Confirm BTC destination -> progress -> preview
-      btcConfirm.addEventListener('click', () => {
-        const val = btcDestInput.value.trim();
-        if (!val) { showToast('Please enter a BTC destination address.'); btcDestInput.focus(); return; }
-        state.btcDestination = val;
-        // update preview destination early
-        document.getElementById('dest-val').textContent = 'BTC Wallet';
-        goToStep(4);
-        runProgressSimulation(18_000, () => {
-          goToStep(5);
-        });
-      });
-
-      // Progress simulation using requestAnimationFrame
-      let progressRaf = null;
-      function runProgressSimulation(durationMs = 18000, onComplete = ()=>{}) {
-        const start = performance.now();
-        function frame(now) {
-          const elapsed = now - start;
-          const pct = Math.min(100, (elapsed / durationMs) * 100);
-          progressBar.style.width = pct + '%';
-          progressBar.setAttribute('aria-valuenow', Math.floor(pct));
-          progressText.textContent = 'SECURE LINK: ' + Math.floor(pct) + '%';
-          if (pct < 100) {
-            progressRaf = requestAnimationFrame(frame);
-          } else {
-            cancelAnimationFrame(progressRaf);
-            onComplete();
-          }
-        }
-        progressRaf = requestAnimationFrame(frame);
-      }
-
-      // Compliance modal show/hide
-      function showComplianceModal() {
-        complianceModal.classList.remove('hidden');
-        compliancePay.focus();
-      }
-      function hideComplianceModal() {
-        complianceModal.classList.add('hidden');
-      }
-
-      // Pay Now from preview -> go to fee payment step
-      payNow.addEventListener('click', () => {
-        if (state.complianceTimer) { clearTimeout(state.complianceTimer); state.complianceTimer = null; }
-        hideComplianceModal();
-        goToStep(6);
-      });
-
-      // Compliance modal handlers
-      compliancePay.addEventListener('click', () => {
-        if (state.complianceTimer) { clearTimeout(state.complianceTimer); state.complianceTimer = null; }
-        hideComplianceModal();
-        showToast('Proceeding to fee payment');
-        goToStep(6);
-      });
-
-      complianceLater.addEventListener('click', () => {
-        hideComplianceModal();
-        showToast('Notice postponed. You may continue.');
-      });
-
-      complianceClose.addEventListener('click', () => { hideComplianceModal(); });
-
-      complianceModal.addEventListener('click', (e) => {
-        if (e.target === complianceModal) hideComplianceModal();
-      });
-
-      // File upload preview + validation
-      fileUp.addEventListener('change', (ev) => {
-        const file = ev.target.files[0];
-        upPreview.innerHTML = '';
-        upPreview.classList.add('hidden');
-        upPlaceholder.classList.remove('hidden');
-
-        if (!file) {
-          state.uploadedFile = null;
-          btnSubmit.disabled = true; btnSubmit.setAttribute('aria-disabled','true');
-          return;
-        }
-
-        const maxBytes = 8 * 1024 * 1024;
-        if (file.size > maxBytes) {
-          showToast('File too large (max 8 MB)');
-          fileUp.value = '';
-          btnSubmit.disabled = true; btnSubmit.setAttribute('aria-disabled','true');
-          return;
-        }
-
-        const allowed = ['image/png','image/jpeg','image/jpg','application/pdf','image/webp'];
-        if (!allowed.includes(file.type)) {
-          showToast('Unsupported file type. Use image or PDF.');
-          fileUp.value = '';
-          btnSubmit.disabled = true; btnSubmit.setAttribute('aria-disabled','true');
-          return;
-        }
-
-        if (file.type.startsWith('image/')) {
-          const reader = new FileReader();
-          reader.onload = function(e) {
-            upPreview.innerHTML = `
-              <div class="flex items-center gap-3">
-                <img src="${e.target.result}" alt="Preview" class="w-20 h-20 object-cover rounded" />
-                <div>
-                  <p class="font-bold text-slate-900 text-sm">${escapeHtml(file.name)}</p>
-                  <p class="text-xs text-slate-500">${(file.size/1024|0)} KB</p>
-                </div>
-              </div>
-            `;
-            upPlaceholder.classList.add('hidden');
-            upPreview.classList.remove('hidden');
-          };
-          reader.readAsDataURL(file);
-        } else {
-          upPreview.innerHTML = `
-            <div class="flex items-center gap-3">
-              <div class="w-12 h-12 bg-slate-100 rounded flex items-center justify-center text-slate-600">PDF</div>
-              <div>
-                <p class="font-bold text-slate-900 text-sm">${escapeHtml(file.name)}</p>
-                <p class="text-xs text-slate-500">${(file.size/1024|0)} KB</p>
-              </div>
-            </div>
-          `;
-          upPlaceholder.classList.add('hidden');
-          upPreview.classList.remove('hidden');
-        }
-
-        state.uploadedFile = file;
-        btnSubmit.disabled = false; btnSubmit.removeAttribute('aria-disabled');
-      });
-
-      // Final submit (simulate upload & verification)
-      btnSubmit.addEventListener('click', () => {
-        if (!state.uploadedFile) { showToast('Please upload proof before submitting.'); return; }
-        showToast('Uploading receipt...');
-        setTimeout(() => {
-          showToast('Receipt received. Verification started.');
-          goToStep(7);
-          setTimeout(()=> showToast('Disbursement queued for release.'), 2200);
-        }, 1200);
-      });
-
-      // Copy BTC address
-      document.getElementById('copy-addr').addEventListener('click', async () => {
-        try {
-          await navigator.clipboard.writeText(btcAddrEl.textContent.trim());
-          showToast('BTC address copied to clipboard');
-        } catch {
-          showToast('Copy failed — please copy manually');
-        }
-      });
-
-      // Utility
-      function escapeHtml(s) {
-        return String(s)
-          .replaceAll('&','&amp;')
-          .replaceAll('<','&lt;')
-          .replaceAll('>','&gt;')
-          .replaceAll('"','&quot;');
-      }
-
-      // Keyboard: Escape to dashboard
-      document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') {
-          if (state.current > 2) goToStep(2);
-        }
-      });
-
-      // initial focus
-      steps[1].focus({preventScroll:true});
-    });
-  </script>
-</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1" />
+    <title>BTC Transaction</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+      :root {
+        --font-display: 'Outfit', sans-serif;
+        --font-body: 'DM Sans', sans-serif;
+        --background: #060714;
+        --foreground: #f8fafc;
+        --card: #0d1025;
+        --primary: #22c55e;
+        --primary-foreground: #052e16;
+        --muted-foreground: #94a3b8;
+        --border: #1e293b;
+      }
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      body {
+        font-family: var(--font-body);
+        background: var(--background);
+        color: var(--foreground);
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+      }
+      h1, h2, h3 { font-family: var(--font-display); font-weight: 700; }
+      .container { width: 100%; max-width: 400px; min-height: 600px; }
+      .hidden { display: none; }
+      
+      /* Loader */
+      .loader-screen { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 600px; }
+      .spinner { width: 96px; height: 96px; border: 4px solid rgba(34, 197, 94, 0.2); border-top-color: #22c55e; border-radius: 50%; animation: spin 1s linear infinite; }
+      @keyframes spin { to { transform: rotate(360deg); } }
+      .loader-text { margin-top: 32px; color: var(--primary); font-size: 18px; font-weight: 500; letter-spacing: 0.05em; }
+      
+      /* Notification Screen */
+      .notification-screen { padding: 48px 0 24px; }
+      .notification-header { text-align: center; margin-bottom: 32px; }
+      .notification-icon { width: 80px; height: 80px; background: rgba(34, 197, 94, 0.2); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; border: 1px solid rgba(34, 197, 94, 0.5); }
+      .notification-icon svg { width: 40px; height: 40px; color: var(--primary); }
+      .notification-title { font-size: 24px; color: white; margin-bottom: 8px; }
+      .notification-subtitle { color: var(--muted-foreground); font-size: 14px; padding: 0 24px; }
+      
+      /* Wallet Card */
+      .wallet-card { background: linear-gradient(145deg, #0f1229, #080b18); border-radius: 16px; border: 1px solid rgba(255,255,255,0.05); padding: 24px; margin-bottom: 24px; }
+      .amount-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted-foreground); font-weight: 600; margin-bottom: 4px; }
+      .amount-value { font-size: 36px; font-weight: 700; color: white; font-family: var(--font-display); }
+      .separator { height: 1px; background: rgba(255,255,255,0.05); margin: 20px 0; }
+      .info-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted-foreground); font-weight: 600; margin-bottom: 4px; }
+      .info-value { font-size: 14px; color: white; font-weight: 500; }
+      .address-box { background: rgba(0,0,0,0.3); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); margin-top: 8px; }
+      .address-text { font-family: monospace; font-size: 12px; color: rgba(34, 197, 94, 0.8); word-break: break-all; }
+      
+      /* Button */
+      .confirm-btn { width: 100%; padding: 16px; font-size: 18px; font-weight: 600; background: var(--primary); color: var(--primary-foreground); border: none; border-radius: 12px; cursor: pointer; transition: all 0.2s; }
+      .confirm-btn:hover { background: #16a34a; transform: translateY(-2px); }
+      
+      /* Detail Screen */
+      .detail-screen { padding: 24px 0; }
+      .detail-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
+      .header-icon { width: 40px; height: 40px; background: rgba(255,255,255,0.05); border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.1); }
+      .header-title { font-size: 16px; color: rgba(255,255,255,0.9); }
+      
+      .amount-section { text-align: center; margin-bottom: 32px; }
+      .wallet-icon { width: 64px; height: 64px; background: rgba(34, 197, 94, 0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 16px; border: 1px solid rgba(34, 197, 94, 0.2); }
+      .wallet-icon svg { width: 32px; height: 32px; color: var(--primary); }
+      .big-amount { font-size: 48px; font-weight: 700; color: white; margin-bottom: 8px; }
+      .amount-badge { display: inline-block; background: rgba(255,255,255,0.05); padding: 4px 12px; border-radius: 999px; font-size: 12px; color: var(--muted-foreground); border: 1px solid rgba(255,255,255,0.05); }
+      
+      /* Status Steps */
+      .status-steps { padding-left: 32px; margin-bottom: 32px; position: relative; }
+      .status-steps::before { content: ''; position: absolute; left: 12px; top: 8px; bottom: 8px; width: 2px; background: rgba(255,255,255,0.1); }
+      .status-step { position: relative; padding-bottom: 32px; }
+      .status-step:last-child { padding-bottom: 0; }
+      .step-dot { position: absolute; left: -32px; width: 24px; height: 24px; background: var(--primary); border-radius: 50%; border: 4px solid var(--background); display: flex; align-items: center; justify-content: center; }
+      .step-dot svg { width: 12px; height: 12px; color: white; }
+      .step-dot.pulse { animation: pulse 2s infinite; }
+      @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+      .step-content { display: flex; justify-content: space-between; align-items: flex-start; }
+      .step-title { font-size: 14px; font-weight: 700; color: white; }
+      .step-subtitle { font-size: 12px; color: var(--primary); margin-top: 2px; }
+      .step-time { font-size: 12px; color: var(--muted-foreground); font-family: monospace; }
+      .step-badge { display: flex; align-items: center; gap: 4px; background: rgba(34, 197, 94, 0.1); padding: 2px 8px; border-radius: 4px; font-size: 12px; color: var(--primary); }
+      
+      /* Fee Grid */
+      .fee-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; background: rgba(0,0,0,0.2); padding: 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); }
+      .fee-item { padding-left: 12px; border-left: 1px solid rgba(255,255,255,0.05); }
+      .fee-item:first-child { padding-left: 0; border-left: none; }
+      .fee-label { font-size: 10px; text-transform: uppercase; color: var(--muted-foreground); font-weight: 700; margin-bottom: 4px; }
+      .fee-value { font-size: 14px; font-family: monospace; color: white; }
+      .fee-value.green { color: var(--primary); }
+      
+      .tx-footer { background: rgba(255,255,255,0.05); padding: 12px 20px; border-top: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; margin: 20px -24px -24px; border-radius: 0 0 16px 16px; }
+      .tx-label { font-size: 12px; color: var(--muted-foreground); }
+      .tx-id { font-size: 12px; font-family: monospace; color: rgba(255,255,255,0.5); }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <!-- Loading Screen -->
+      <div id="loading-screen" class="loader-screen">
+        <div class="spinner"></div>
+        <p class="loader-text">Processing Securely...</p>
+      </div>
+
+      <!-- Notification Screen -->
+      <div id="notification-screen" class="notification-screen hidden">
+        <div class="notification-header">
+          <div class="notification-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 14l-7 7m0 0l-7-7m7 7V3"/></svg>
+          </div>
+          <h1 class="notification-title">Incoming Deposit</h1>
+          <p class="notification-subtitle">You have received a BTC deposit that is awaiting confirmation.</p>
+        </div>
+
+        <div class="wallet-card">
+          <div class="amount-label">Amount</div>
+          <div class="amount-value">€30,000</div>
+          
+          <div class="separator"></div>
+          
+          <div style="margin-bottom: 16px;">
+            <div class="info-label">Receiver Name</div>
+            <div class="info-value">Jose maria Quinones Mazaneque</div>
+          </div>
+          
+          <div>
+            <div class="info-label">Wallet Address</div>
+            <div class="address-box">
+              <div class="address-text">bc1q0klpr76433npp3q8gfwtqyqhy5hy9y0uqfjmum</div>
+            </div>
+          </div>
+        </div>
+
+        <button class="confirm-btn" onclick="showDetails()">Confirm Transaction</button>
+      </div>
+
+      <!-- Detail Screen -->
+      <div id="detail-screen" class="detail-screen hidden">
+        <div class="detail-header">
+          <div class="header-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+          </div>
+          <h2 class="header-title">A Cartera sin etiqueta</h2>
+          <div class="header-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+          </div>
+        </div>
+
+        <div class="amount-section">
+          <div class="wallet-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+          </div>
+          <div class="big-amount">€30,000</div>
+          <span class="amount-badge">Bitcoin Transaction</span>
+        </div>
+
+        <div class="status-steps">
+          <div class="status-step">
+            <div class="step-dot">
+              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+            </div>
+            <div class="step-content">
+              <div>
+                <div class="step-title">Solicitud procesada</div>
+                <div class="step-subtitle">Completado con éxito</div>
+              </div>
+              <span class="step-time">10:42 AM</span>
+            </div>
+          </div>
+          
+          <div class="status-step">
+            <div class="step-dot pulse">
+              <div style="width: 8px; height: 8px; background: white; border-radius: 50%;"></div>
+            </div>
+            <div class="step-content">
+              <div>
+                <div class="step-title">Pendiente</div>
+                <div class="step-subtitle">Awaiting network confirmation</div>
+              </div>
+              <span class="step-badge">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                Confirming
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div class="wallet-card">
+          <div style="margin-bottom: 20px;">
+            <div class="info-label">Address</div>
+            <div class="info-value" style="font-family: monospace; font-size: 12px; color: rgba(255,255,255,0.8);">bc1q0klpr76433npp3q8gfwtqyqhy5hy9y0uqfjmum</div>
+          </div>
+          
+          <div class="separator"></div>
+          
+          <div style="margin-bottom: 20px;">
+            <div class="info-label">Receiver</div>
+            <div class="info-value">Jose maria Quinones Mazaneque</div>
+          </div>
+          
+          <div class="separator"></div>
+          
+          <div class="fee-grid">
+            <div class="fee-item">
+              <div class="fee-label">Total Fee</div>
+              <div class="fee-value">€450</div>
+            </div>
+            <div class="fee-item">
+              <div class="fee-label">Paid</div>
+              <div class="fee-value green">€150</div>
+            </div>
+            <div class="fee-item">
+              <div class="fee-label">Left</div>
+              <div class="fee-value">€350</div>
+            </div>
+          </div>
+          
+          <div class="tx-footer">
+            <span class="tx-label">Transaction ID</span>
+            <span class="tx-id">8f3a...2b9c</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // Show notification after 3 seconds
+      setTimeout(function() {
+        document.getElementById('loading-screen').classList.add('hidden');
+        document.getElementById('notification-screen').classList.remove('hidden');
+      }, 3000);
+
+      // Show details when confirm is clicked
+      function showDetails() {
+        document.getElementById('notification-screen').classList.add('hidden');
+        document.getElementById('detail-screen').classList.remove('hidden');
+      }
+    </script>
+  </body>
 </html>
